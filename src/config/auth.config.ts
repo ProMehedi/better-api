@@ -52,7 +52,6 @@ export const auth = betterAuth({
     // Email verification configuration
     requireEmailVerification: false,
     emailVerification: {
-      // @ts-expect-error - This is a valid configuration
       sendVerificationEmail: async ({ user, url, token }) => {
         await sendEmail({
           to: user.email,
