@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Flower, LogOut, User, Settings, Bell } from 'lucide-react'
+import { authClient } from '~/lib/auth'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -21,9 +22,10 @@ export default function Dashboard() {
     joinedDate: 'March 2023',
   })
 
-  const handleLogout = () => {
-    // Simulate logout
-    router.push('/')
+  const handleLogout = async () => {
+    // Clear the session via Better Auth client
+    await authClient.signOut()
+    router.push('/login')
   }
 
   return (
