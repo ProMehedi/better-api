@@ -1,0 +1,18 @@
+{
+  "name": "bun-hono-nwe",
+  "scripts": {
+    "dev": "bun run --hot src/server.ts"
+  },
+  "dependencies": {
+    "@types/mongoose": "^5.11.97",
+    "better-auth": "^1.2.3",
+    "better-sqlite3": "^11.8.1",
+    "hono": "^4.7.4",
+    "mongodb": "^6.14.2",
+    "mongoose": "^8.12.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/bun": "latest"
+  }
+}
