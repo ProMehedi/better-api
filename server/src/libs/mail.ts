@@ -1,10 +1,10 @@
 import axios from 'axios'
-import { EMAILIT_API_KEY, EMAILIT_API_URL, FROM_EMAIL } from '~/libs'
+import { EMAILIT_API_KEY, EMAILIT_API_URL, FROM_EMAIL, FROM_NAME } from '~/libs'
 
 export const sendEmail = async ({ to, subject, text }) => {
   const apiKey = EMAILIT_API_KEY
   const apiUrl = EMAILIT_API_URL
-  const from = FROM_EMAIL
+  const from = `${FROM_NAME} <${FROM_EMAIL}>`
 
   if (!apiKey || !apiUrl || !from) {
     console.error('Mailit API key or URL not found')
