@@ -1,11 +1,13 @@
 'use client'
 
-import type React from 'react'
-
-import { useState } from 'react'
+import React from 'react'
+import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import { Loader2, Lock, Eye, EyeOff } from 'lucide-react'
+//
+import { authClient } from '~/lib/auth'
 import { Button } from '~/components/ui/button'
 import {
   Card,
@@ -15,8 +17,7 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
-import { Loader2, Lock, Eye, EyeOff } from 'lucide-react'
-
+import { Progress } from '~/components/ui/progress'
 import {
   Form,
   FormControl,
@@ -26,8 +27,6 @@ import {
   FormMessage,
   FormDescription,
 } from '~/components/ui/form'
-import { Progress } from '~/components/ui/progress'
-import { toast } from 'sonner'
 
 type FormValues = {
   currentPassword: string
@@ -37,10 +36,10 @@ type FormValues = {
 
 export default function ChangePassword() {
   const router = useRouter()
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [passwordStrength, setPasswordStrength] = useState(0)
+  const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
+  const [showNewPassword, setShowNewPassword] = React.useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [passwordStrength, setPasswordStrength] = React.useState(0)
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -98,30 +97,36 @@ export default function ChangePassword() {
   }
 
   const onSubmit = async (data: FormValues) => {
-    try {
-      // Check if passwords match
-      if (data.newPassword !== data.confirmPassword) {
-        form.setError('confirmPassword', {
-          type: 'manual',
-          message: 'Passwords do not match',
-        })
-        return
-      }
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      toast.success('Password updated', {
-        description: 'Your password has been successfully changed.',
+    // Check if passwords match
+    if (data.newPassword !== data.confirmPassword) {
+      form.setError('confirmPassword', {
+        type: 'manual',
+        message: 'Passwords do not match',
       })
-
-      router.push('/dashboard/profile')
-    } catch (error) {
-      toast.error('Update failed', {
-        description:
-          'There was a problem updating your password. Please try again.',
-      })
+      return
     }
+
+    // Change password
+    await authClient.changePassword(
+      {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Password updated', {
+            description: 'Your password has been successfully changed.',
+          })
+          router.push('/dashboard/profile')
+        },
+        onError: () => {
+          toast.error('Update failed', {
+            description:
+              'There was a problem updating your password. Please try again.',
+          })
+        },
+      }
+    )
   }
 
   return (
