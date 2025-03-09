@@ -35,7 +35,22 @@ export const auth = betterAuth({
     },
   },
   session: { modelName: 'sessions' },
-  account: { modelName: 'accounts' },
+  account: {
+    modelName: 'accounts',
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['github', 'google', 'email-password'],
+      allowDifferentEmails: false,
+      sendAccountLinkingEmail: async ({ user, url, token }) => {
+        // Send account linking email
+        sendEmail({
+          to: user.email,
+          subject: 'Link your account',
+          text: `Click the link to confirm linking your account: ${url}`,
+        })
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     disableSignUp: false, // Enable/Disable sign up
@@ -75,6 +90,16 @@ export const auth = betterAuth({
         subject: 'Reset your password',
         text: `Click the link to reset your password: ${url}`,
       })
+    },
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
 })

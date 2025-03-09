@@ -32,10 +32,10 @@ export default function DashboardLayout({
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push('/auth/login')
           toast.success('Logged out successfully', {
             description: 'You have been successfully logged out.',
           })
+          window.location.href = '/auth/login'
         },
       },
     })
@@ -65,7 +65,7 @@ export default function DashboardLayout({
       <header className='border-b border-indigo-100 bg-white sticky top-0 z-10'>
         <div className='container mx-auto px-4 py-3 flex items-center justify-between'>
           <div className='flex items-center space-x-2'>
-            <Link href='/dashboard' className='flex items-center space-x-2'>
+            <Link href='/' className='flex items-center space-x-2'>
               <Flower className='h-6 w-6 text-indigo-500' />
               <span className='font-bold text-indigo-700'>Better Auth</span>
             </Link>

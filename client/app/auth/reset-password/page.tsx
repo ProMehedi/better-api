@@ -1,11 +1,20 @@
 'use client'
 
-import React from 'react'
-
-import { useState } from 'react'
-import Link from 'next/link'
+import React, { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import {
+  Loader2,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  Flower,
+  CheckCircle,
+} from 'lucide-react'
+import { authClient } from '~/lib/auth'
 import { Button } from '~/components/ui/button'
 import {
   Card,
@@ -17,15 +26,6 @@ import {
 } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
 import {
-  Loader2,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowLeft,
-  Flower,
-  CheckCircle,
-} from 'lucide-react'
-import {
   Form,
   FormControl,
   FormField,
@@ -35,15 +35,14 @@ import {
   FormDescription,
 } from '~/components/ui/form'
 import { Progress } from '~/components/ui/progress'
-import { toast } from 'sonner'
-import { authClient } from '~/lib/auth'
 
 type FormValues = {
   newPassword: string
   confirmPassword: string
 }
 
-export default function ResetPassword() {
+// Component that uses searchParams
+function ResetPasswordForm() {
   const [showNewPassword, setShowNewPassword] = React.useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [passwordStrength, setPasswordStrength] = React.useState(0)
@@ -52,18 +51,6 @@ export default function ResetPassword() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
-
-  // Redirect back to / if session is active
-  //   React.useEffect(() => {
-  //     const checkSession = async () => {
-  //       const { data } = await authClient.getSession()
-  //       if (data?.session) {
-  //         router.push('/')
-  //       }
-  //     }
-
-  //     checkSession()
-  //   }, [])
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -405,5 +392,23 @@ export default function ResetPassword() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Main exported component wrapped in Suspense
+export default function ResetPassword() {
+  return (
+    <Suspense
+      fallback={
+        <div className='min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center justify-center p-4'>
+          <div className='text-center'>
+            <Loader2 className='h-8 w-8 animate-spin mx-auto text-indigo-500' />
+            <p className='mt-2 text-indigo-700'>Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
