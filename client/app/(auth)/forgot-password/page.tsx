@@ -1,10 +1,13 @@
 'use client'
 
-import type React from 'react'
-
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft, Flower, Loader2 } from 'lucide-react'
+//
+import { authClient } from '~/lib/auth'
 import { Button } from '~/components/ui/button'
 import {
   Card,
@@ -15,44 +18,57 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { ArrowLeft, Flower, Loader2, CheckCircle } from 'lucide-react'
-import { Alert, AlertDescription } from '~/components/ui/alert'
-import { authClient } from '~/lib/auth'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '~/components/ui/form'
+
+type FormValues = {
+  email: string
+}
 
 export default function ForgotPassword() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const form = useForm<FormValues>({
+    defaultValues: {
+      email: '',
+    },
+  })
 
+  const { isSubmitting } = form.formState
+
+  const onSubmit = async (data: FormValues) => {
     // Request password reset link
     await authClient.forgetPassword(
       {
-        email,
+        email: data.email,
         redirectTo: `${window.location.origin}/login`,
       },
       {
         onSuccess: () => {
-          setIsLoading(false)
           setIsSubmitted(true)
+          toast.success('Reset link sent', {
+            description: 'Check your email for reset instructions.',
+          })
         },
       }
     )
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-rose-50 to-white flex flex-col items-center justify-center p-4'>
-      <Card className='w-full max-w-md border-rose-200'>
+    <div className='min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center justify-center p-4'>
+      <Card className='w-full max-w-md border-indigo-200'>
         <CardHeader className='text-center'>
-          <div className='mx-auto bg-rose-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-2'>
-            <Flower className='h-6 w-6 text-rose-500' />
+          <div className='mx-auto bg-indigo-100 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-2'>
+            <Flower className='h-6 w-6 text-indigo-500' />
           </div>
-          <CardTitle className='text-2xl font-bold text-rose-700'>
+          <CardTitle className='text-2xl font-bold text-indigo-700'>
             Reset Password
           </CardTitle>
           <CardDescription>
@@ -63,49 +79,59 @@ export default function ForgotPassword() {
         </CardHeader>
         <CardContent>
           {!isSubmitted ? (
-            <form onSubmit={handleSubmit} className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='email'>Email</Label>
-                <Input
-                  id='email'
-                  type='email'
-                  placeholder='name@example.com'
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className='border-rose-200 focus-visible:ring-rose-500'
-                />
-              </div>
-              <Button
-                type='submit'
-                className='w-full bg-rose-500 hover:bg-rose-600'
-                disabled={isLoading}
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className='space-y-4'
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    Sending request...
-                  </>
-                ) : (
-                  'Send Reset Link'
-                )}
-              </Button>
-            </form>
+                <FormField
+                  control={form.control}
+                  name='email'
+                  rules={{
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='name@example.com'
+                          {...field}
+                          className='border-indigo-200 focus-visible:ring-indigo-500'
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type='submit'
+                  className='w-full bg-indigo-600 hover:bg-indigo-700'
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      Sending request...
+                    </>
+                  ) : (
+                    'Send Reset Link'
+                  )}
+                </Button>
+              </form>
+            </Form>
           ) : (
             <div className='space-y-4'>
-              <Alert className='bg-green-50 border-green-200'>
-                <CheckCircle className='h-4 w-4' />
-                <AlertDescription>
-                  <p>
-                    If an account exists with the email{' '}
-                    <span className='font-medium'>{email}</span>, you will
-                    receive password reset instructions shortly.
-                  </p>
-                </AlertDescription>
-              </Alert>
+              <div className='p-4 bg-indigo-50 border border-indigo-200 rounded-md text-indigo-700 text-sm'>
+                Check your email for instructions to reset your password.
+              </div>
               <Button
                 onClick={() => router.push('/login')}
-                className='w-full bg-rose-500 hover:bg-rose-600'
+                className='w-full bg-indigo-600 hover:bg-indigo-700'
               >
                 Return to Login
               </Button>
@@ -116,7 +142,7 @@ export default function ForgotPassword() {
           {!isSubmitted && (
             <Link
               href='/login'
-              className='text-rose-600 hover:underline text-sm flex items-center'
+              className='text-indigo-600 hover:underline text-sm flex items-center'
             >
               <ArrowLeft className='mr-1 h-3 w-3' />
               Back to login
