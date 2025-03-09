@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb'
 import { betterAuth } from 'better-auth'
+import { magicLink } from 'better-auth/plugins'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 //
 import { BETTER_AUTH_URL, APP_URL, sendEmail } from '~/libs'
@@ -92,6 +93,17 @@ export const auth = betterAuth({
       })
     },
   },
+  plugins: [
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        await sendEmail({
+          to: email,
+          subject: 'Sign in to your account',
+          text: `Click the link to sign in to your account: ${url}`,
+        })
+      },
+    }),
+  ],
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,

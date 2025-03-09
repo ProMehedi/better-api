@@ -1,10 +1,11 @@
 'use client'
 
-import React, { Suspense } from 'react'
+import React, { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowLeft, Flower, Loader2, Github, Wand2 } from 'lucide-react'
 //
 import { Button } from '~/components/ui/button'
 import {
@@ -16,7 +17,6 @@ import {
   CardTitle,
 } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'
-import { ArrowLeft, Flower, Loader2, Github } from 'lucide-react'
 import {
   Form,
   FormControl,
@@ -25,6 +25,8 @@ import {
   FormLabel,
   FormMessage,
 } from '~/components/ui/form'
+import { Checkbox } from '~/components/ui/checkbox'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs'
 import { Separator } from '~/components/ui/separator'
 import { authClient } from '~/lib/auth'
 
@@ -33,15 +35,21 @@ type FormValues = {
   password: string
 }
 
+type MagicLinkFormValues = {
+  email: string
+}
+
 // Extract login form to its own component
 function LoginForm() {
-  const [isGithubLoading, setIsGithubLoading] = React.useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
+  const [isGithubLoading, setIsGithubLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [isMagicLinkSent, setIsMagicLinkSent] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
+  // Password login form
   const form = useForm<FormValues>({
     defaultValues: {
       email: '',
@@ -49,7 +57,15 @@ function LoginForm() {
     },
   })
 
+  // Magic link form
+  const magicLinkForm = useForm<MagicLinkFormValues>({
+    defaultValues: {
+      email: '',
+    },
+  })
+
   const { isSubmitting } = form.formState
+  const { isSubmitting: isMagicLinkSubmitting } = magicLinkForm.formState
 
   const onSubmit = async (data: FormValues) => {
     // Sign in with email and password
@@ -68,7 +84,37 @@ function LoginForm() {
     })
   }
 
-  // Handle social login
+  const onMagicLinkSubmit = async (data: MagicLinkFormValues) => {
+    try {
+      await authClient.signIn.magicLink(
+        {
+          email: data.email,
+          callbackURL: `${window.location.origin}${callbackUrl}`,
+        },
+        {
+          onSuccess: () => {
+            setIsMagicLinkSent(true)
+            toast.success('Magic link sent', {
+              description: 'Check your email for a login link.',
+            })
+          },
+          onError: ({ error }) => {
+            toast.error('Failed to send magic link', {
+              description:
+                error.message || 'There was a problem sending the magic link',
+            })
+          },
+        }
+      )
+    } catch (error) {
+      toast.error('Failed to send magic link', {
+        description:
+          'There was a problem sending the magic link. Please try again.',
+      })
+    }
+  }
+
+  // Handle GitHub login
   const handleGithubLogin = async () => {
     setIsGithubLoading(true)
     await authClient.signIn.social(
@@ -88,6 +134,7 @@ function LoginForm() {
     )
   }
 
+  // Handle Google login
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true)
     await authClient.signIn.social(
@@ -181,85 +228,182 @@ function LoginForm() {
                 </span>
               </div>
             </div>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className='space-y-4'
-              >
-                <FormField
-                  control={form.control}
-                  name='email'
-                  rules={{
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder='name@example.com'
-                          {...field}
-                          className='border-indigo-200 focus-visible:ring-indigo-500'
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name='password'
-                  rules={{
-                    required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters',
-                    },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className='flex items-center justify-between'>
-                        <FormLabel>Password</FormLabel>
-                        <Link
-                          href='/auth/forgot-password'
-                          className='text-xs text-indigo-600 hover:underline'
-                        >
-                          Forgot password?
-                        </Link>
+            <Tabs defaultValue='magic-link' className='w-full'>
+              <TabsList className='grid w-full grid-cols-2'>
+                <TabsTrigger value='password'>Password</TabsTrigger>
+                <TabsTrigger value='magic-link'>Magic Link</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value='password' className='mt-4'>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className='space-y-4'
+                  >
+                    <FormField
+                      control={form.control}
+                      name='email'
+                      rules={{
+                        required: 'Email is required',
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: 'Invalid email address',
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder='name@example.com'
+                              {...field}
+                              className='border-indigo-200 focus-visible:ring-indigo-500'
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='password'
+                      rules={{
+                        required: 'Password is required',
+                        minLength: {
+                          value: 8,
+                          message: 'Password must be at least 8 characters',
+                        },
+                      }}
+                      render={({ field }) => (
+                        <FormItem>
+                          <div className='flex items-center justify-between'>
+                            <FormLabel>Password</FormLabel>
+                            <Link
+                              href='/auth/forgot-password'
+                              className='text-xs text-indigo-600 hover:underline'
+                            >
+                              Forgot password?
+                            </Link>
+                          </div>
+                          <FormControl>
+                            <Input
+                              type='password'
+                              {...field}
+                              className='border-indigo-200 focus-visible:ring-indigo-500'
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button
+                      type='submit'
+                      className='w-full bg-indigo-600 hover:bg-indigo-700'
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                          Logging in...
+                        </>
+                      ) : (
+                        'Login with Password'
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+              </TabsContent>
+
+              <TabsContent value='magic-link' className='mt-4'>
+                {!isMagicLinkSent ? (
+                  <Form {...magicLinkForm}>
+                    <form
+                      onSubmit={magicLinkForm.handleSubmit(onMagicLinkSubmit)}
+                      className='space-y-4'
+                    >
+                      <div className='bg-indigo-50 p-3 rounded-md mb-4 text-sm text-indigo-700 border border-indigo-100'>
+                        <p>
+                          We'll send you a magic link to your email. Click the
+                          link to login without a password.
+                        </p>
                       </div>
-                      <FormControl>
-                        <Input
-                          type='password'
-                          {...field}
-                          className='border-indigo-200 focus-visible:ring-indigo-500'
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <FormField
+                        control={magicLinkForm.control}
+                        name='email'
+                        rules={{
+                          required: 'Email is required',
+                          pattern: {
+                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                            message: 'Invalid email address',
+                          },
+                        }}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input
+                                type='email'
+                                placeholder='name@example.com'
+                                {...field}
+                                className='border-indigo-200 focus-visible:ring-indigo-500'
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                <Button
-                  type='submit'
-                  className='w-full bg-indigo-600 hover:bg-indigo-700'
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                      Logging in...
-                    </>
-                  ) : (
-                    'Login with Email'
-                  )}
-                </Button>
-              </form>
-            </Form>
+                      <Button
+                        type='submit'
+                        className='w-full bg-indigo-600 hover:bg-indigo-700'
+                        disabled={isMagicLinkSubmitting}
+                      >
+                        {isMagicLinkSubmitting ? (
+                          <>
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            Sending magic link...
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className='mr-2 h-4 w-4' />
+                            Send Magic Link
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                ) : (
+                  <div className='space-y-4'>
+                    <div className='bg-green-50 p-4 rounded-md border border-green-100 text-green-700'>
+                      <h3 className='font-medium text-green-800 mb-1'>
+                        Magic link sent!
+                      </h3>
+                      <p className='text-sm'>
+                        We've sent a magic link to your email. Check your inbox
+                        and click the link to login instantly.
+                      </p>
+                    </div>
+                    <div className='text-sm text-gray-500'>
+                      <p>
+                        Didn't receive the email? Check your spam folder or try
+                        again in a few minutes.
+                      </p>
+                    </div>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      className='w-full border-indigo-200'
+                      onClick={() => setIsMagicLinkSent(false)}
+                    >
+                      Try Again
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </CardContent>
         <CardFooter className='flex flex-col space-y-4 pt-0'>
