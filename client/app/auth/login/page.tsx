@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 //
 import { Button } from '~/components/ui/button'
 import {
@@ -33,6 +33,8 @@ type FormValues = {
 
 export default function Login() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -47,7 +49,7 @@ export default function Login() {
     // Sign in with email and password
     await authClient.signIn.email(data, {
       onSuccess: () => {
-        router.push('/dashboard')
+        router.push(callbackUrl)
         toast.success('Welcome back!', {
           description: 'You have successfully logged in.',
         })
@@ -117,7 +119,7 @@ export default function Login() {
                     <div className='flex items-center justify-between'>
                       <FormLabel>Password</FormLabel>
                       <Link
-                        href='/forgot-password'
+                        href='/auth/forgot-password'
                         className='text-xs text-indigo-600 hover:underline'
                       >
                         Forgot password?
@@ -155,7 +157,10 @@ export default function Login() {
         <CardFooter className='flex flex-col space-y-4 pt-0'>
           <div className='text-center text-sm'>
             Don&apos;t have an account?{' '}
-            <Link href='/register' className='text-indigo-600 hover:underline'>
+            <Link
+              href='/auth/register'
+              className='text-indigo-600 hover:underline'
+            >
               Register
             </Link>
           </div>

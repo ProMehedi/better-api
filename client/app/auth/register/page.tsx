@@ -205,7 +205,7 @@ export default function Register() {
                       <FormLabel className='text-sm font-medium leading-none'>
                         I agree to the{' '}
                         <Link
-                          href='/terms'
+                          href='#'
                           className='text-indigo-600 hover:underline'
                         >
                           terms and conditions
@@ -237,7 +237,10 @@ export default function Register() {
         <CardFooter className='flex flex-col space-y-4 pt-0'>
           <div className='text-center text-sm'>
             Already have an account?{' '}
-            <Link href='/login' className='text-indigo-600 hover:underline'>
+            <Link
+              href='/auth/login'
+              className='text-indigo-600 hover:underline'
+            >
               Login
             </Link>
           </div>

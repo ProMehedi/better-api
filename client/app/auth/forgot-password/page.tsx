@@ -130,7 +130,7 @@ export default function ForgotPassword() {
                 Check your email for instructions to reset your password.
               </div>
               <Button
-                onClick={() => router.push('/login')}
+                onClick={() => router.push('/auth/login')}
                 className='w-full bg-indigo-600 hover:bg-indigo-700'
               >
                 Return to Login
@@ -141,7 +141,7 @@ export default function ForgotPassword() {
         <CardFooter className='flex justify-center pt-0'>
           {!isSubmitted && (
             <Link
-              href='/login'
+              href='/auth/login'
               className='text-indigo-600 hover:underline text-sm flex items-center'
             >
               <ArrowLeft className='mr-1 h-3 w-3' />
