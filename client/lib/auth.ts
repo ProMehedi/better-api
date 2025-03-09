@@ -1,7 +1,16 @@
 import { createAuthClient } from 'better-auth/react' // make sure to import from better-auth/react
+import { inferAdditionalFields } from 'better-auth/client/plugins'
 
 export const authClient = createAuthClient({
   baseURL: 'http://localhost:8000/api/auth', // The base URL of the API
+  plugins: [
+    inferAdditionalFields({
+      user: {
+        phone: { type: 'string', nullable: true, returned: true },
+        isAdmin: { type: 'boolean', default: false, returned: true },
+      },
+    }),
+  ],
 })
 
 export const { signIn, signUp, useSession } = authClient
