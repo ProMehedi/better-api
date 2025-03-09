@@ -52,20 +52,29 @@ export default function Register() {
 
   const onSubmit = async (data: FormValues) => {
     // Register with email and password
-    await authClient.signUp.email(data, {
-      onSuccess: () => {
-        toast.success('Welcome!', {
-          description: 'Your account has been created successfully.',
-        })
-        router.push('/dashboard')
+    await authClient.signUp.email(
+      {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: '',
+        isAdmin: false,
       },
-      onError: ({ error }) => {
-        console.log('error')
-        toast.error('Registration failed', {
-          description: error.message,
-        })
-      },
-    })
+      {
+        onSuccess: () => {
+          toast.success('Welcome!', {
+            description: 'Your account has been created successfully.',
+          })
+          router.push('/dashboard')
+        },
+        onError: ({ error }) => {
+          console.log('error')
+          toast.error('Registration failed', {
+            description: error.message,
+          })
+        },
+      }
+    )
   }
 
   return (

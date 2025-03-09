@@ -48,7 +48,7 @@ export default function ForgotPassword() {
     await authClient.forgetPassword(
       {
         email: data.email,
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       },
       {
         onSuccess: () => {

@@ -10,6 +10,8 @@ export function middleware(request: NextRequest) {
     path === '/auth/login' ||
     path === '/auth/register' ||
     path === '/auth/forgot-password' ||
+    path === '/auth/reset-password' ||
+    path.startsWith('/auth/reset-password/') ||
     path === '/'
 
   // Get authentication status from cookies - better-auth uses '__session' cookie

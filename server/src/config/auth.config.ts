@@ -1,6 +1,8 @@
 import { MongoClient } from 'mongodb'
 import { betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
+//
+import { BETTER_AUTH_URL, APP_URL, sendEmail } from '~/libs'
 
 const mongoUri = process.env.MONGO_URI
 
@@ -10,12 +12,10 @@ if (!mongoUri) {
 
 const mongodb = new MongoClient(mongoUri).db('betterAuth')
 
-const sendEmail = async ({ to, subject, text }: any) => {
-  // TODO: Implement email sending
-}
-
 export const auth = betterAuth({
   database: mongodbAdapter(mongodb),
+  baseURL: BETTER_AUTH_URL,
+  trustedOrigins: [APP_URL],
   user: {
     modelName: 'users',
     additionalFields: {
@@ -26,6 +26,11 @@ export const auth = betterAuth({
       enabled: true,
       sendChangeEmailVerification: async ({ user, newEmail, url, token }) => {
         // Send change email verification
+        sendEmail({
+          to: newEmail,
+          subject: 'Verify your new email',
+          text: `Click the link to verify your new email: ${url}`,
+        })
       },
     },
   },

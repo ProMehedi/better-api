@@ -6,8 +6,8 @@ export const authClient = createAuthClient({
   plugins: [
     inferAdditionalFields({
       user: {
-        phone: { type: 'string', nullable: true, returned: true },
-        isAdmin: { type: 'boolean', default: false, returned: true },
+        phone: { type: 'string' },
+        isAdmin: { type: 'boolean' },
       },
     }),
   ],
