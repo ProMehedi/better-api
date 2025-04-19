@@ -2,11 +2,10 @@ import '~/config/compress.config'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { MongoClient } from 'mongodb'
 import { compress } from 'hono/compress'
 //
 import { Users } from '~/routes'
-import { auth, DB } from '~/config'
+import { auth } from '~/config'
 import { errorHandler, notFound } from '~/middlewares'
 
 // Initialize the Hono app with base path
@@ -16,18 +15,6 @@ const app = new Hono<{
     session: typeof auth.$Infer.Session.session | null
   }
 }>({ strict: false })
-
-// Declare global DB variable
-declare global {
-  var mongoDb: ReturnType<MongoClient['db']>
-}
-
-// Config MongoDB - Only connect if not in Cloudflare Workers environment
-if (typeof process !== 'undefined') {
-  DB().then((db) => {
-    globalThis.mongoDb = db.mongoClient.db()
-  })
-}
 
 // Determine the environment
 const port = process.env?.PORT || 8000

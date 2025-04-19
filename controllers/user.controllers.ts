@@ -1,5 +1,5 @@
 import { Context } from 'hono'
-import { ObjectId } from 'mongodb'
+import { DB } from '~/config'
 
 /**
  * @api {get} /users Get All Users
@@ -7,7 +7,7 @@ import { ObjectId } from 'mongodb'
  * @access Private
  */
 export const getUsers = async (c: Context) => {
-  const users = await mongoDb.collection('users').find().toArray()
+  const { rows: users } = await DB.query('SELECT * FROM users')
   return c.json(users)
 }
 
@@ -19,9 +19,8 @@ export const getUsers = async (c: Context) => {
 export const getUserById = async (c: Context) => {
   const id = c.req.param('id')
 
-  const user = await mongoDb
-    .collection('users')
-    .findOne({ _id: new ObjectId(id) })
+  const { rows } = await DB.query('SELECT * FROM users WHERE id = $1', [id])
+  const user = rows[0]
 
   if (!user) {
     return c.json(
@@ -43,42 +42,97 @@ export const getUserById = async (c: Context) => {
  * @access Private
  */
 export const editProfile = async (c: Context) => {
-  const user = c.get('user')
-  const body = await c.req.json()
+  try {
+    const user = c.get('user')
+    const body = await c.req.json()
 
-  // Create an update object with only the fields that were provided
-  const updateFields: Record<string, any> = {}
+    // Create an array to hold our query parts and values
+    const updateParts: string[] = []
+    const values: any[] = []
+    let paramCount = 1
 
-  // Only add fields to the update if they exist in the request body
-  if (body.name !== '') updateFields.name = body.name
-  if (body.phone !== '') updateFields.phone = body.phone
-  if (body.image !== '') updateFields.image = body.image
+    // Only add fields to the update if they exist in the request body
+    if (body.name !== undefined && body.name !== '') {
+      updateParts.push(`name = $${paramCount}`)
+      values.push(body.name.trim())
+      paramCount++
+    }
 
-  // If no fields were provided, return early
-  if (Object.keys(updateFields).length === 0) {
+    if (body.phone !== undefined && body.phone !== '') {
+      // Simple phone validation
+      if (!/^\+?[\d\s-]{7,15}$/.test(body.phone)) {
+        return c.json(
+          {
+            success: false,
+            message: 'Invalid phone number format',
+          },
+          400
+        )
+      }
+      updateParts.push(`phone = $${paramCount}`)
+      values.push(body.phone.trim())
+      paramCount++
+    }
+
+    if (body.image !== undefined && body.image !== '') {
+      updateParts.push(`image = $${paramCount}`)
+      values.push(body.image.trim())
+      paramCount++
+    }
+
+    // Add updatedAt timestamp
+    updateParts.push(`"updatedAt" = NOW()`)
+
+    // If no fields were provided, return early
+    if (values.length === 0) {
+      return c.json(
+        {
+          success: false,
+          message: 'No fields to update',
+        },
+        400
+      )
+    }
+
+    // Add user ID as the last parameter
+    values.push(user.id)
+
+    // Update the user's profile with only the provided fields
+    const query = `
+      UPDATE users 
+      SET ${updateParts.join(', ')} 
+      WHERE id = $${paramCount}
+      RETURNING *
+    `
+
+    const { rows } = await DB.query(query, values)
+
+    if (rows.length === 0) {
+      return c.json(
+        {
+          success: false,
+          message: 'User not found or update failed',
+        },
+        404
+      )
+    }
+
+    return c.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: rows[0],
+    })
+  } catch (error) {
+    console.error('Profile update error:', error)
     return c.json(
       {
         success: false,
-        message: 'No fields to update',
+        message: 'Failed to update profile',
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
-      400
+      500
     )
   }
-
-  // Update the user's profile with only the provided fields
-  const updatedProfile = await mongoDb.collection('users').updateOne(
-    { _id: new ObjectId(user.id) },
-    {
-      $set: updateFields,
-      $currentDate: { lastModified: true },
-    }
-  )
-
-  return c.json({
-    success: true,
-    message: 'Profile updated successfully',
-    data: updatedProfile,
-  })
 }
 
 /**
@@ -89,9 +143,10 @@ export const editProfile = async (c: Context) => {
 export const getProfile = async (c: Context) => {
   const user = c.get('user')
 
-  const profile = await mongoDb
-    .collection('users')
-    .findOne({ _id: new ObjectId(user.id) })
+  const { rows } = await DB.query('SELECT * FROM users WHERE id = $1', [
+    user.id,
+  ])
+  const profile = rows[0]
 
   if (!profile) {
     return c.json(
