@@ -47,8 +47,8 @@ app.get('/', (c) => {
 })
 
 // Better-Auth - Handle all auth routes
-app.all('/api/auth/*', async (c) => {
-  return await auth.handler(c.req.raw)
+app.on(['POST', 'GET'], '/api/auth/*', (c) => {
+  return auth.handler(c.req.raw)
 })
 
 // Users Route
