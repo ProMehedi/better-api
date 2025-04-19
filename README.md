@@ -1,6 +1,6 @@
-# Bun + Hono + Better Auth
+# Bun + Hono + Better API
 
-A modern, high-performance API using [Bun](https://bun.sh), [Hono](https://hono.dev), [Better Auth](https://github.com/yourprofile/better-auth), and [MongoDB](https://mongodb.com) with TypeScript.
+A modern, high-performance API using [Bun](https://bun.sh), [Hono](https://hono.dev), [Better Auth](https://better-auth.com), and [PostgreSQL](https://www.postgresql.org/) with TypeScript.
 
 ## Features
 
@@ -9,11 +9,14 @@ A modern, high-performance API using [Bun](https://bun.sh), [Hono](https://hono.
 - 🧩 **Modular architecture** for scalability
 - 🔒 **Enhanced authentication** with Better-Auth
   - Email/password authentication
+  - Magic Link authentication
+  - Social logins (e.g., GitHub)
   - Session management
   - Password reset flows
-  - Email verification
+  - Email verification & change flows
+  - Account linking
   - Custom user fields
-- 🔌 **MongoDB integration** using both Mongoose and native MongoDB client
+- 🐘 **PostgreSQL integration** using `pg` client pool
 - 🛡️ **Role-based authorization** with admin and user roles
 - 📦 **Compression support** for optimized responses
 - ✅ **TypeScript** for type safety
@@ -36,9 +39,9 @@ A modern, high-performance API using [Bun](https://bun.sh), [Hono](https://hono.
 
 ### Better Auth
 
-- **Comprehensive Authentication**: Better Auth provides a complete authentication solution, including email/password authentication, session management, and password reset flows.
+- **Comprehensive Authentication**: Better Auth provides a complete authentication solution, including email/password, magic links, social logins, session management, and password reset flows.
 - **Customizable**: Better Auth allows for extensive customization, including custom user fields, email verification, and role-based access control.
-- **Integration**: Better Auth seamlessly integrates with MongoDB and other databases, making it easy to add authentication to any project.
+- **Integration**: Better Auth seamlessly integrates with PostgreSQL and other databases, making it easy to add authentication to any project.
 
 Combining these three technologies provides a powerful, high-performance, and flexible foundation for building modern APIs. Whether you're building a small project or a large-scale application, Bun, Hono, and Better Auth offer the tools and features you need to succeed.
 
@@ -67,15 +70,15 @@ Combining these three technologies provides a powerful, high-performance, and fl
 Before you begin, make sure you have the following installed:
 
 - [Bun](https://bun.sh) (v1.0.0 or newer)
-- [MongoDB](https://mongodb.com) or [MongoDB Atlas](https://www.mongodb.com/atlas/database)
+- [PostgreSQL](https://www.postgresql.org/download/)
 
 ### Installation
 
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/yourusername/bun-hono-better-auth.git
-cd bun-hono-better-auth
+git clone https://github.com/yourusername/better-api.git
+cd better-api
 ```
 
 2. Install dependencies:
@@ -88,15 +91,45 @@ bun install
 
 Create a `.env` file in the root directory with the following variables:
 
-```
+```dotenv
+# Server Configuration
 PORT=8000
-MONGO_URI=mongodb://localhost:27017/betterAuth
 API_BASE=/api/v1
+APP_URL=http://localhost:3000 # Your frontend URL
 
-# Better-Auth configuration
-BETTER_AUTH_SECRET=your_secret_key
-BETTER_AUTH_URL=http://localhost:3000
+# Database Configuration
+POSTGRES_URL=postgresql://user:password@host:port/database
+
+# Better-Auth Configuration
+BETTER_AUTH_SECRET=your_very_secure_secret_key_32_chars_long # Use a strong, random 32-character secret
+BETTER_AUTH_URL=http://localhost:8000 # Your backend API URL where Better Auth runs
+
+# Social Login Providers (Example: GitHub)
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# Email Configuration (if using email features like verification, reset, magic links)
+# Add your email provider (e.g., Resend, SMTP) credentials here
+# Example for SMTP:
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_USER=your_email_user
+# SMTP_PASS=your_email_password
+# EMAIL_FROM=noreply@example.com
 ```
+
+### Database Migrations
+
+Better Auth uses migrations to manage its database schema. Run the following commands after setting up your `.env` file:
+
+1.  **Generate Migrations:** Create necessary migration files based on your auth configuration.
+    ```bash
+    bunx @better-auth/cli@latest generate
+    ```
+2.  **Run Migrations:** Apply the pending migrations to your database.
+    ```bash
+    bunx @better-auth/cli@latest migrate
+    ```
 
 ## Usage
 
@@ -118,54 +151,80 @@ bun start
 
 ## Better-Auth Integration
 
-This project showcases a seamless integration of Better-Auth with a Hono API framework, using MongoDB as the database backend.
+This project showcases a seamless integration of Better-Auth with a Hono API framework, using PostgreSQL as the database backend.
 
 ### Authentication Flow
 
-1. **Registration**: Users can register through the `/api/auth/signup` endpoint
-2. **Login**: Authentication occurs via `/api/auth/signin`
-3. **Session Management**: All authenticated requests use Better-Auth session tokens
-4. **Password Reset**: Integrated password reset functionality
-5. **Email Verification**: Optional email verification flow
+1.  **Registration**: Users can register through the `/api/auth/signup` endpoint.
+2.  **Login**: Authentication occurs via `/api/auth/signin` (email/password), `/api/auth/magic-link` (magic link), or social providers (e.g., `/api/auth/github`).
+3.  **Session Management**: All authenticated requests use Better-Auth session tokens.
+4.  **Password Reset**: Integrated password reset functionality via `/api/auth/reset-password`.
+5.  **Email Verification**: Optional email verification flow.
+6.  **Account Linking**: Link multiple authentication methods (e.g., email/password + GitHub) to a single user account.
 
 ### Configuration Options
 
-The project demonstrates an advanced Better-Auth configuration with:
+The project demonstrates an advanced Better-Auth configuration (`config/auth.config.ts`) with:
+
+- PostgreSQL database adapter (`pg` pool)
+- Custom user fields (`phone`, `isAdmin`)
+- Email change functionality with verification
+- Account linking
+- Email/Password authentication with secure hashing (Bun.password)
+- Email verification (optional)
+- Password reset
+- Magic Link plugin
+- Social Providers (GitHub example)
 
 ```typescript
-// Better-Auth configuration with MongoDB adapter
+// Example snippet from config/auth.config.ts
 export const auth = betterAuth({
-  database: mongodbAdapter(mongodb),
+  database: DB, // PostgreSQL Pool instance
+  baseURL: BETTER_AUTH_URL,
+  trustedOrigins: [APP_URL],
   user: {
-    // Custom user fields including phone and isAdmin flag
+    modelName: 'users',
     additionalFields: {
       phone: { type: 'string', nullable: true, returned: true },
       isAdmin: { type: 'boolean', default: false, returned: true },
     },
-    // Email change functionality
     changeEmail: {
       enabled: true,
-      // Email verification flow for email changes
+      // ... send email logic
     },
   },
-  // Email and password authentication configuration
+  session: { modelName: 'sessions' },
+  account: {
+    modelName: 'accounts',
+    accountLinking: {
+      enabled: true,
+      // ... configuration
+    },
+  },
   emailAndPassword: {
     enabled: true,
-    // Secure password hashing with Bun's built-in utilities
     password: {
       hash: async (password) => {
-        return await Bun.password.hash(password, {
-          algorithm: 'bcrypt',
-          cost: 10,
-        })
+        /* ... Bun.password.hash */
       },
       verify: async ({ password, hash }) => {
-        return await Bun.password.verify(password, hash)
+        /* ... Bun.password.verify */
       },
     },
-    // Email verification configuration
     requireEmailVerification: false,
-    // Password reset functionality
+    // ... email verification and password reset config
+  },
+  plugins: [
+    magicLink({
+      // ... send email logic
+    }),
+  ],
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+    // Add other providers like Google, etc.
   },
 })
 ```
@@ -181,16 +240,23 @@ Better-Auth handles core authentication while custom routes extend user manageme
 
 ## API Routes
 
-| Method | Route                   | Description         | Auth Required | Provider    |
-| ------ | ----------------------- | ------------------- | ------------- | ----------- |
-| POST   | `/api/auth/signup`      | User registration   | No            | Better-Auth |
-| POST   | `/api/auth/signin`      | User login          | No            | Better-Auth |
-| POST   | `/api/auth/signout`     | User logout         | Yes           | Better-Auth |
-| POST   | `/api/auth/reset`       | Password reset      | No            | Better-Auth |
-| GET    | `/api/v1/users`         | Get all users       | Yes (Admin)   | Custom      |
-| GET    | `/api/v1/users/profile` | Get user profile    | Yes           | Custom      |
-| PUT    | `/api/v1/users/profile` | Update user profile | Yes           | Custom      |
-| GET    | `/api/v1/users/:id`     | Get user by ID      | Yes           | Custom      |
+| Method | Route                             | Description                           | Auth Required | Provider    |
+| ------ | --------------------------------- | ------------------------------------- | ------------- | ----------- |
+| POST   | `/api/auth/signup`                | User registration                     | No            | Better-Auth |
+| POST   | `/api/auth/signin`                | User login (email/pass)               | No            | Better-Auth |
+| POST   | `/api/auth/magic-link`            | Request Magic Link                    | No            | Better-Auth |
+| GET    | `/api/auth/magic-link/verify`     | Verify Magic Link Token               | No            | Better-Auth |
+| GET    | `/api/auth/github`                | Initiate GitHub Login                 | No            | Better-Auth |
+| GET    | `/api/auth/github/callback`       | GitHub Login Callback                 | No            | Better-Auth |
+| POST   | `/api/auth/signout`               | User logout                           | Yes           | Better-Auth |
+| POST   | `/api/auth/reset-password`        | Request Password Reset                | No            | Better-Auth |
+| POST   | `/api/auth/reset-password/verify` | Verify Reset Token & Set New Password | No            | Better-Auth |
+| GET    | `/api/v1/users`                   | Get all users                         | Yes (Admin)   | Custom      |
+| GET    | `/api/v1/users/profile`           | Get user profile                      | Yes           | Custom      |
+| PUT    | `/api/v1/users/profile`           | Update user profile                   | Yes           | Custom      |
+| GET    | `/api/v1/users/:id`               | Get user by ID                        | Yes           | Custom      |
+
+_Note: Auth routes may vary based on enabled Better Auth features._
 
 ### Protected Routes
 
@@ -199,28 +265,34 @@ Protected routes require authentication. Include your authentication token accor
 ## Project Structure
 
 ```
-├── src/
-│   ├── config/              # Configuration files
-│   │   ├── auth.config.ts   # Better-Auth configuration
-│   │   ├── compress.config.ts  # Compression configuration
-│   │   ├── db.config.ts     # Database configuration
-│   │   └── index.ts         # Config exports
-│   ├── controllers/         # Route controllers
-│   │   ├── user.controllers.ts # User-related controllers
-│   │   └── index.ts         # Controller exports
-│   ├── middlewares/         # Express middlewares
-│   │   ├── auth.middlewares.ts # Authentication middleware
-│   │   ├── error.middlewares.ts # Error handling middleware
-│   │   └── index.ts         # Middleware exports
-│   ├── routes/              # API routes
-│   │   ├── user.routes.ts   # User routes
-│   │   └── index.ts         # Route exports
-│   └── server.ts            # Main application entry
-├── .env                     # Environment variables (create this)
-├── bun.lock                 # Bun lock file
-├── package.json             # Package configuration
-├── README.md                # This file
-└── tsconfig.json            # TypeScript configuration
+.
+├── better-auth_migrations/ # Better Auth database migrations
+├── config/                 # Configuration files
+│   ├── auth.config.ts      # Better-Auth configuration
+│   ├── compress.config.ts  # Compression configuration
+│   ├── db.config.ts        # Database (PostgreSQL) configuration
+│   └── index.ts            # Config exports
+├── controllers/            # Route controllers
+│   ├── user.controllers.ts # User-related controllers
+│   └── index.ts            # Controller exports
+├── libs/                   # Shared libraries/utilities
+│   ├── constants.ts        # Environment constants
+│   ├── index.ts            # Lib exports
+│   └── mail.ts             # Email sending utility
+├── middlewares/            # Hono middlewares
+│   ├── auth.middlewares.ts # Authentication/Authorization middleware
+│   ├── error.middlewares.ts# Error handling middleware
+│   └── index.ts            # Middleware exports
+├── routes/                 # API routes
+│   ├── user.routes.ts      # User routes (/api/v1/users)
+│   └── index.ts            # Route exports
+├── .env                    # Environment variables (create this)
+├── .gitignore              # Git ignore file
+├── bun.lockb               # Bun lock file
+├── package.json            # Project dependencies and scripts
+├── README.md               # This file
+├── server.ts               # Main application entry point (Hono server)
+└── tsconfig.json           # TypeScript configuration
 ```
 
 ## Contributing
@@ -241,4 +313,4 @@ This project is licensed under the MIT License.
 
 Mehedi Hasan - [admin@promehedi.com](mailto:admin@promehedi.com)
 
-Project Link: [https://github.com/ProMehedi/bun-hono-better-auth](https://github.com/ProMehedi/bun-hono-better-auth)
+Project Link: [https://github.com/ProMehedi/better-api](https://github.com/ProMehedi/better-api)
