@@ -9,8 +9,8 @@
     "url": "https://github.com/ProMehedi/bun-hono-better-auth"
   },
   "scripts": {
-    "start": "NODE_ENV=production bun run src/server.ts",
-    "dev": "bun run --hot src/server.ts",
+    "start": "NODE_ENV=production bun run server.ts",
+    "dev": "bun run --hot server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

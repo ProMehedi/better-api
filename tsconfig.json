@@ -5,7 +5,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "noImplicitAny": false,
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
       "~/*": ["*"]
     },
