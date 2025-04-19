@@ -5,7 +5,7 @@ import { logger } from 'hono/logger'
 import { compress } from 'hono/compress'
 //
 import { Users } from '~/routes'
-import { auth } from '~/config'
+import { auth, initDB } from '~/config'
 import { errorHandler, notFound } from '~/middlewares'
 
 // Initialize the Hono app with base path
@@ -15,6 +15,9 @@ const app = new Hono<{
     session: typeof auth.$Infer.Session.session | null
   }
 }>({ strict: false })
+
+// Initialize and check the database connection
+initDB()
 
 // Determine the environment
 const port = process.env?.PORT || 8000

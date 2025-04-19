@@ -1,2 +1,2 @@
-export { default as DB } from './db.config'
+export { default as DB, initDB } from './db.config'
 export * from './auth.config'
