@@ -161,3 +161,55 @@ export const getProfile = async (c: Context) => {
 
   return c.json(profile)
 }
+
+/**
+ * @api {delete} /users/:id Delete User
+ * @apiGroup Users
+ * @access Private
+ */
+export const deleteUser = async (c: Context) => {
+  const id = c.req.param('id')
+
+  try {
+    // Start a transaction for atomic operations
+    await DB.query('BEGIN')
+
+    // First delete related sessions for the user
+    await DB.query('DELETE FROM sessions WHERE "userId" = $1', [id])
+
+    // Delete related accounts
+    await DB.query('DELETE FROM accounts WHERE "userId" = $1', [id])
+
+    // Then delete the user
+    const { rowCount } = await DB.query('DELETE FROM users WHERE id = $1', [id])
+
+    if (rowCount === 0) {
+      await DB.query('ROLLBACK')
+      return c.json(
+        {
+          success: false,
+          message: 'User not found',
+          error: 'No user found with the provided ID',
+        },
+        404
+      )
+    }
+
+    await DB.query('COMMIT')
+    return c.json({
+      success: true,
+      message: 'User deleted successfully',
+    })
+  } catch (error) {
+    await DB.query('ROLLBACK')
+    console.error('Delete user error:', error)
+    return c.json(
+      {
+        success: false,
+        message: 'Failed to delete user',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    )
+  }
+}
