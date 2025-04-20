@@ -8,6 +8,9 @@ if (!POSTGRES_URL) {
 // Create a PostgreSQL connection pool
 const db = new Pool({
   connectionString: POSTGRES_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 })
 
 export const initDB = async () => {
