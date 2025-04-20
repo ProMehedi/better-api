@@ -20,7 +20,7 @@ export const errorHandler: ErrorHandler = (err, c) => {
 }
 
 // Not Found Handler
-export const notFound: NotFoundHandler = (c) => {
+export const notFound: NotFoundHandler = c => {
   return c.json(
     {
       success: false,

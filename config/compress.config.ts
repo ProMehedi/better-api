@@ -14,9 +14,9 @@ function createCompressionStream(format: string) {
 
   const readableStream = new ReadableStream({
     start(controller) {
-      handler.on('data', (chunk) => controller.enqueue(chunk))
+      handler.on('data', chunk => controller.enqueue(chunk))
       handler.on('end', () => controller.close())
-      handler.on('error', (err) => controller.error(err))
+      handler.on('error', err => controller.error(err))
     },
   })
 

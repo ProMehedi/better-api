@@ -51,7 +51,7 @@ export const auth = betterAuth({
     autoSignIn: true,
     // Password hashing configuration
     password: {
-      hash: async (password) => {
+      hash: async password => {
         return await Bun.password.hash(password, {
           algorithm: 'bcrypt',
           cost: 10,

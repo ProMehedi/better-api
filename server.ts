@@ -40,14 +40,14 @@ app.use(
 )
 
 // Home Route
-app.get('/', (c) => {
+app.get('/', c => {
   return c.json({
     message: 'Welcome to the Hono API',
   })
 })
 
 // Better-Auth - Handle all auth routes
-app.on(['POST', 'GET'], '/api/auth/*', (c) => {
+app.on(['POST', 'GET'], '/api/auth/*', c => {
   return auth.handler(c.req.raw)
 })
 

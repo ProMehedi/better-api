@@ -1,0 +1,47 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "files.associations": {
+        "*.css": "tailwindcss"
+    },
+    "editor.quickSuggestions": {
+        "strings": true
+    },
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#00897B",
+        "activityBar.background": "#00897B",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#422c74",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
+        "sash.hoverBorder": "#00897B",
+        "statusBar.background": "#00897B",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#00897B",
+        "statusBarItem.remoteBackground": "#00897B",
+        "statusBarItem.remoteForeground": "#e7e7e7",
+        "titleBar.activeBackground": "#00897B",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#00897B99",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        [
+            "cn\\(((?:[^()]|\\([^()]*\\))*)\\)",
+            "(?:'|\"|`)([^']*)(?:'|\"|`)"
+        ]
+    ],
+    "typescript.preferences.preferTypeOnlyAutoImports": true,
+    "typescript.tsdk": "node_modules/typescript/lib"
+}
