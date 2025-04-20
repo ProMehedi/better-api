@@ -1,12 +1,12 @@
 {
-  "name": "bun-hono-better-auth",
+  "name": "better-api",
   "version": "1.0.0",
   "description": "A high-performance API template using Bun, Hono, and Better Auth",
   "author": "Mehedi <admin@promehedi.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ProMehedi/bun-hono-better-auth"
+    "url": "https://github.com/ProMehedi/better-api"
   },
   "scripts": {
     "start": "NODE_ENV=production bun run server.ts",
