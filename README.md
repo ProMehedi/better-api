@@ -98,7 +98,7 @@ API_BASE=/api/v1
 APP_URL=http://localhost:3000 # Your frontend URL
 
 # Database Configuration
-POSTGRES_URL=postgresql://user:password@host:port/database
+DATABASE_URL=postgresql://user:password@host:port/database
 
 # Better-Auth Configuration
 BETTER_AUTH_SECRET=your_very_secure_secret_key_32_chars_long # Use a strong, random 32-character secret
@@ -118,18 +118,37 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 # EMAIL_FROM=noreply@example.com
 ```
 
+## Updated Database Integration
+
+This project now uses **Drizzle ORM** instead of the `pg` client pool for PostgreSQL integration. Drizzle ORM provides a modern, type-safe, and flexible way to interact with your database.
+
+### Updated Environment Variables
+
+Ensure your `.env` file is updated with the necessary configuration for Drizzle ORM. Refer to the example below:
+
+```dotenv
+# Database Configuration
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
 ### Database Migrations
 
-Better Auth uses migrations to manage its database schema. Run the following commands after setting up your `.env` file:
+Drizzle ORM uses a streamlined approach for managing database schema. Follow these steps to generate and apply migrations:
 
-1.  **Generate Migrations:** Create necessary migration files based on your auth configuration.
-    ```bash
-    bunx @better-auth/cli@latest generate
-    ```
-2.  **Run Migrations:** Apply the pending migrations to your database.
-    ```bash
-    bunx @better-auth/cli@latest migrate
-    ```
+1. **Generate Better Auth Schema:**
+   ```bash
+   bunx @better-auth/cli@latest generate --config config/auth.config.ts --output config/schema/auth-schema.ts
+   ```
+
+2. **Generate Drizzle Migrations:**
+   ```bash
+   bunx drizzle-kit generate
+   ```
+
+3. **Apply Migrations:**
+   ```bash
+   bunx drizzle-kit push
+   ```
 
 ## Usage
 

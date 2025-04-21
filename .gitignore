@@ -9,3 +9,4 @@ node_modules/
 # build
 better-auth_migrations
 dist
+drizzle

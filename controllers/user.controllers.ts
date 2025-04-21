@@ -1,5 +1,7 @@
 import { Context } from 'hono'
 import { DB } from '~/config'
+import { eq, and, sql } from 'drizzle-orm'
+import * as schema from '~/config/schema/auth-schema'
 
 /**
  * @api {get} /users Get All Users
@@ -7,7 +9,7 @@ import { DB } from '~/config'
  * @access Private
  */
 export const getUsers = async (c: Context) => {
-  const { rows: users } = await DB.query('SELECT * FROM users')
+  const users = await DB.select().from(schema.users)
   return c.json(users)
 }
 
@@ -19,8 +21,11 @@ export const getUsers = async (c: Context) => {
 export const getUserById = async (c: Context) => {
   const id = c.req.param('id')
 
-  const { rows } = await DB.query('SELECT * FROM users WHERE id = $1', [id])
-  const user = rows[0]
+  const user = await DB.select()
+    .from(schema.users)
+    .where(eq(schema.users.id, id))
+    .limit(1)
+    .then(users => users[0])
 
   if (!user) {
     return c.json(
@@ -46,16 +51,12 @@ export const editProfile = async (c: Context) => {
     const user = c.get('user')
     const body = await c.req.json()
 
-    // Create an array to hold our query parts and values
-    const updateParts: string[] = []
-    const values: any[] = []
-    let paramCount = 1
+    // Create an object to hold our updates
+    const updates: Partial<typeof schema.users.$inferInsert> = {}
 
     // Only add fields to the update if they exist in the request body
     if (body.name !== undefined && body.name !== '') {
-      updateParts.push(`name = $${paramCount}`)
-      values.push(body.name.trim())
-      paramCount++
+      updates.name = body.name.trim()
     }
 
     if (body.phone !== undefined && body.phone !== '') {
@@ -69,22 +70,18 @@ export const editProfile = async (c: Context) => {
           400
         )
       }
-      updateParts.push(`phone = $${paramCount}`)
-      values.push(body.phone.trim())
-      paramCount++
+      updates.phone = body.phone.trim()
     }
 
     if (body.image !== undefined && body.image !== '') {
-      updateParts.push(`image = $${paramCount}`)
-      values.push(body.image.trim())
-      paramCount++
+      updates.image = body.image.trim()
     }
 
     // Add updatedAt timestamp
-    updateParts.push(`"updatedAt" = NOW()`)
+    updates.updatedAt = new Date()
 
     // If no fields were provided, return early
-    if (values.length === 0) {
+    if (Object.keys(updates).length === 0) {
       return c.json(
         {
           success: false,
@@ -94,20 +91,14 @@ export const editProfile = async (c: Context) => {
       )
     }
 
-    // Add user ID as the last parameter
-    values.push(user.id)
-
     // Update the user's profile with only the provided fields
-    const query = `
-      UPDATE users 
-      SET ${updateParts.join(', ')} 
-      WHERE id = $${paramCount}
-      RETURNING *
-    `
+    const updatedUser = await DB.update(schema.users)
+      .set(updates)
+      .where(eq(schema.users.id, user.id))
+      .returning()
+      .then(users => users[0])
 
-    const { rows } = await DB.query(query, values)
-
-    if (rows.length === 0) {
+    if (!updatedUser) {
       return c.json(
         {
           success: false,
@@ -120,7 +111,7 @@ export const editProfile = async (c: Context) => {
     return c.json({
       success: true,
       message: 'Profile updated successfully',
-      data: rows[0],
+      data: updatedUser,
     })
   } catch (error) {
     console.error('Profile update error:', error)
@@ -143,10 +134,11 @@ export const editProfile = async (c: Context) => {
 export const getProfile = async (c: Context) => {
   const user = c.get('user')
 
-  const { rows } = await DB.query('SELECT * FROM users WHERE id = $1', [
-    user.id,
-  ])
-  const profile = rows[0]
+  const profile = await DB.select()
+    .from(schema.users)
+    .where(eq(schema.users.id, user.id))
+    .limit(1)
+    .then(users => users[0])
 
   if (!profile) {
     return c.json(
@@ -172,19 +164,36 @@ export const deleteUser = async (c: Context) => {
 
   try {
     // Start a transaction for atomic operations
-    await DB.query('BEGIN')
+    const tx = await DB.transaction(async trx => {
+      // First delete related sessions for the user
+      await trx.delete(schema.sessions).where(eq(schema.sessions.userId, id))
 
-    // First delete related sessions for the user
-    await DB.query('DELETE FROM sessions WHERE "userId" = $1', [id])
+      // Delete related accounts
+      await trx.delete(schema.accounts).where(eq(schema.accounts.userId, id))
 
-    // Delete related accounts
-    await DB.query('DELETE FROM accounts WHERE "userId" = $1', [id])
+      // Then delete the user
+      const deletedUsers = await trx
+        .delete(schema.users)
+        .where(eq(schema.users.id, id))
+        .returning()
 
-    // Then delete the user
-    const { rowCount } = await DB.query('DELETE FROM users WHERE id = $1', [id])
+      if (deletedUsers.length === 0) {
+        throw new Error('User not found')
+      }
 
-    if (rowCount === 0) {
-      await DB.query('ROLLBACK')
+      return deletedUsers[0]
+    })
+
+    return c.json({
+      success: true,
+      message: 'User deleted successfully',
+    })
+  } catch (error) {
+    console.error('Delete user error:', error)
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage === 'User not found') {
       return c.json(
         {
           success: false,
@@ -195,19 +204,11 @@ export const deleteUser = async (c: Context) => {
       )
     }
 
-    await DB.query('COMMIT')
-    return c.json({
-      success: true,
-      message: 'User deleted successfully',
-    })
-  } catch (error) {
-    await DB.query('ROLLBACK')
-    console.error('Delete user error:', error)
     return c.json(
       {
         success: false,
         message: 'Failed to delete user',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
       },
       500
     )

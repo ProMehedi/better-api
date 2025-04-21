@@ -8,10 +8,5 @@ export const APP_URL = process.env.APP_URL || 'http://localhost:3000'
 export const BETTER_AUTH_URL =
   process.env.API_URL || 'http://localhost:8000/api/auth'
 
-// Postgres
-export const POSTGRES_HOST = process.env.POSTGRES_HOST
-export const POSTGRES_PORT = process.env.POSTGRES_PORT
-export const POSTGRES_USER = process.env.POSTGRES_USER
-export const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD
-export const POSTGRES_DB = process.env.POSTGRES_DB
-export const POSTGRES_URL = `postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`
+// Database
+export const DATABASE_URL = process.env.DATABASE_URL

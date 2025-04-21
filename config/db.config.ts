@@ -1,22 +1,41 @@
 import { Pool } from 'pg'
-import { POSTGRES_URL } from '~/libs'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { DATABASE_URL } from '~/libs'
+import {
+  accounts,
+  sessions,
+  users,
+  verification,
+} from '~/config/schema/auth-schema'
 
-if (!POSTGRES_URL) {
+if (!DATABASE_URL) {
   throw new Error('Missing DATABASE_URL in environment variables')
 }
 
 // Create a PostgreSQL connection pool
-const db = new Pool({
-  connectionString: POSTGRES_URL,
+const pool = new Pool({
+  connectionString: DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
+  },
+})
+
+// Create a Drizzle ORM instance with the PostgreSQL connection pool
+const db = drizzle({
+  client: pool,
+  schema: {
+    accounts,
+    sessions,
+    users,
+    verification,
+    // Define your schema here if needed
   },
 })
 
 export const initDB = async () => {
   try {
     // Test the connection
-    const client = await db.connect()
+    const client = await pool.connect()
     client.release()
     console.log('✅ PostgreSQL Connected')
 

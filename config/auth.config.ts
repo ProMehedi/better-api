@@ -1,11 +1,14 @@
 import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { magicLink } from 'better-auth/plugins'
 import { DB } from '.'
 //
 import { BETTER_AUTH_URL, APP_URL, sendEmail } from '~/libs'
 
 export const auth = betterAuth({
-  database: DB,
+  database: drizzleAdapter(DB, {
+    provider: 'pg',
+  }),
   baseURL: BETTER_AUTH_URL,
   trustedOrigins: [APP_URL],
   user: {
