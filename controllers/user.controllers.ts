@@ -1,7 +1,7 @@
 import { Context } from 'hono'
 import { DB } from '~/config'
 import { eq, and, sql } from 'drizzle-orm'
-import * as schema from '~/config/schema/auth-schema'
+import * as schema from '~/config/db/schema/auth-schema'
 
 /**
  * @api {get} /users Get All Users

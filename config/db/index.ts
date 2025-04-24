@@ -1,12 +1,7 @@
 import { Pool } from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { DATABASE_URL } from '~/libs'
-import {
-  accounts,
-  sessions,
-  users,
-  verification,
-} from '~/config/schema/auth-schema'
+import { accounts, sessions, users, verification } from './schema/auth-schema'
 
 if (!DATABASE_URL) {
   throw new Error('Missing DATABASE_URL in environment variables')
